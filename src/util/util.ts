@@ -1,6 +1,6 @@
 import fs from "fs";
 import Jimp = require("jimp");
-import axios from "axios"; 
+import axios from "axios";
 
 // filterImageFromURL
 // helper function to download, filter, and save the filtered image locally
@@ -8,41 +8,26 @@ import axios from "axios";
 // INPUTS
 //    inputURL: string - a publicly accessible url to an image file
 // RETURNS
-//    an absolute path to a filtered image locally saved file 
-
-
+//    an absolute path to a filtered image locally saved file
 export async function filterImageFromURL(inputURL: string): Promise<string> {
   return new Promise(async (resolve, reject) => {
     try {
-      axios({
-          method: 'get',
-          url: inputURL,
-          responseType: 'arraybuffer'
-      })
-      .then(async ({data: imageBuffer}) => {
-        const photo = await Jimp.read(imageBuffer);
-        const outpath =
-          "/tmp/filtered." + Math.floor(Math.random() * 2000) + ".jpg";
-        await photo
-          .resize(256, 256) // resize
-          .quality(60) // set JPEG quality
-          .greyscale() // set greyscale
-          .write(__dirname + outpath, (img) => {
-            resolve(__dirname + outpath);
-          });
-      })
+      const { data } = await axios.get(inputURL, { responseType: "arraybuffer" });
+      const photo = await Jimp.read(data);
+      const outpath =
+        "/tmp/filtered." + Math.floor(Math.random() * 2000) + ".jpg";
+      await photo
+        .resize(256, 256) // resize
+        .quality(60) // set JPEG quality
+        .greyscale() // set greyscale
+        .write(__dirname + outpath, (img) => {
+          resolve(__dirname + outpath);
+        });
     } catch (error) {
       reject(error);
     }
   });
 }
-
-
-
-
-
-
-
 
 // deleteLocalFiles
 // helper function to delete files on the local disk
@@ -52,5 +37,14 @@ export async function filterImageFromURL(inputURL: string): Promise<string> {
 export async function deleteLocalFiles(files: Array<string>) {
   for (let file of files) {
     fs.unlinkSync(file);
+  }
+}
+
+export function isValidUrl(url: string): boolean {
+  try {
+    return new Boolean(new URL(url)).valueOf();
+  }
+  catch (e) {
+    return false;
   }
 }
